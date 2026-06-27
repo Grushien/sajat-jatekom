@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Grushflow</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ===================================================================
+       GRUSHFLOW (Városi Élet) – HTML5 életszimulátor / tycoon.
+       Minden felirat angol; a kód-kommentek magyarul magyaráznak.
+       A felület 16:9 "játékvászon", ami a böngészőhöz skálázódik.
+  ==================================================================== -->
+
+  <div id="app">
+    <div id="stage" class="stage--city">
+
+      <!-- ============ BAL OLDALI FIX MENÜ ============ -->
+      <nav id="sidebar">
+        <button class="nav-btn is-active" data-view="city">   <span class="nav-ico">🏙️</span><span class="nav-txt">City</span></button>
+        <button class="nav-btn"           data-view="home">   <span class="nav-ico">🏠</span><span class="nav-txt">Home</span></button>
+        <button class="nav-btn"           data-view="career"> <span class="nav-ico">💼</span><span class="nav-txt">Career</span></button>
+        <button class="nav-btn"           data-view="friends"><span class="nav-ico">👥</span><span class="nav-txt">Friends</span></button>
+        <button class="nav-btn"           data-view="travel"> <span class="nav-ico">✈️</span><span class="nav-txt">Travel</span></button>
+        <button class="nav-btn"           data-view="shop">   <span class="nav-ico">🛍️</span><span class="nav-txt">Shop</span></button>
+        <button class="nav-btn"           data-view="settings"><span class="nav-ico">⚙️</span><span class="nav-txt">Settings</span></button>
+        <div class="nav-ver">v0.1 · Local</div>
+      </nav>
+
+      <!-- ============ HUD – BAL FENT (karakter + állapotsávok) ============ -->
+      <div id="hud-left" class="glass">
+        <div id="avatar"></div>
+        <div class="hud-left-info">
+          <div class="hud-name-row">
+            <span id="player-name">Alex</span>
+            <span id="player-level" class="chip">Lv 1</span>
+          </div>
+          <div class="bar"><span class="bar-ico">😊</span><div class="bar-track"><div id="bar-happy" class="bar-fill bar-fill--happy"></div></div><span id="val-happy" class="bar-val">0%</span></div>
+          <div class="bar"><span class="bar-ico">⚡</span><div class="bar-track"><div id="bar-energy" class="bar-fill bar-fill--energy"></div></div><span id="val-energy" class="bar-val">0%</span></div>
+          <div class="bar"><span class="bar-ico">🍔</span><div class="bar-track"><div id="bar-hunger" class="bar-fill bar-fill--hunger"></div></div><span id="val-hunger" class="bar-val">0%</span></div>
+        </div>
+      </div>
+
+      <!-- ============ HUD – JOBB FENT (idő, pénz, xp) ============ -->
+      <div id="hud-right" class="glass">
+        <div class="hud-r-row"><span id="stat-weather">☀️ Sunny</span></div>
+        <div class="hud-r-row"><span class="muted">📅</span> <span id="stat-date">Day 1</span></div>
+        <div class="hud-r-row money"><span class="muted">💰</span> <span id="money">$0</span></div>
+        <div class="hud-r-row xp">
+          <span class="muted">⭐</span> <span id="xp-text">0 XP</span>
+          <div class="xp-track"><div id="xp-bar" class="xp-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- ============ FŐ NÉZET-CÍM ============ -->
+      <div id="view-title" class="glass">City</div>
+
+      <!-- ============ "NEXT GOAL" KÁRTYA (mindig látható cél) ============ -->
+      <div id="goal-card" class="card">
+        <div class="card-head"><span class="card-kicker">🎯 Next goal</span></div>
+        <div id="goal-name" class="goal-name">—</div>
+        <div id="goal-desc" class="goal-desc muted">—</div>
+        <div class="goal-bar-track"><div id="goal-bar" class="goal-bar-fill"></div></div>
+        <div class="goal-foot">
+          <span id="goal-progress" class="muted">$0 / $0</span>
+          <button id="btn-buy-goal" class="btn btn-primary btn-sm" disabled>Buy</button>
+        </div>
+      </div>
+
+      <!-- ============ DAILY REWARD JELZŐ ============ -->
+      <button id="btn-daily" class="daily-badge">
+        <span class="daily-ico">🎁</span>
+        <span class="daily-txt">Daily<br><b id="daily-sub">reward</b></span>
+        <span id="daily-dot" class="daily-dot"></span>
+      </button>
+
+      <!-- ============ IDŐZÍTŐ KÁRTYA (látható visszaszámláló) ============ -->
+      <div id="timer-card" class="card">
+        <div class="card-head">
+          <span class="card-kicker">⏱️ Work shift</span>
+          <span id="passive-rate" class="passive-chip">+$0/hr</span>
+        </div>
+
+        <!-- Inaktív állapot: műszak indítása -->
+        <div id="timer-idle">
+          <div class="muted timer-hint">No shift running. Start one to earn cash.</div>
+          <button id="btn-start-shift" class="btn btn-primary btn-block">▶ Work a shift (1 min)</button>
+        </div>
+
+        <!-- Futó állapot: visszaszámláló + speed up -->
+        <div id="timer-running" class="hidden">
+          <div class="timer-row">
+            <span id="timer-count" class="timer-count">00:00</span>
+            <span class="muted timer-reward">Reward: <b id="timer-reward">$0</b></span>
+          </div>
+          <div class="timer-track"><div id="timer-bar" class="timer-bar-fill"></div></div>
+          <button id="btn-speedup" class="btn btn-ad btn-block">⚡ Speed up · Watch ad</button>
+        </div>
+
+        <!-- Kész állapot: begyűjtés -->
+        <div id="timer-ready" class="hidden">
+          <div class="ready-banner">✅ Shift complete!</div>
+          <div class="ready-row">
+            <button id="btn-collect"  class="btn btn-primary">Collect <b id="collect-amt">$0</b></button>
+            <button id="btn-collect2" class="btn btn-ad">×2 · Ad</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ AKCIÓSÁV (jobb-lent, nézetfüggő) ============ -->
+      <div id="action-bar"></div>
+
+      <!-- ============ ESEMÉNYNAPLÓ ============ -->
+      <div id="log-wrap">
+        <ul id="log"></ul>
+      </div>
+
+      <!-- ============ FLOATING POINTS (lebegő +$ visszajelzés) ============ -->
+      <div id="float-layer"></div>
+    </div>
+  </div>
+
+  <!-- ============ PORTRAIT MOBIL: ELFORDÍTÁS-KÉRŐ ============ -->
+  <div id="rotate-hint">
+    <div class="rot-emoji">📱</div>
+    <div class="rot-title">Rotate your device</div>
+    <div class="rot-sub">Grushflow plays best in landscape — turn your phone sideways.</div>
+  </div>
+
+  <!-- ============ "WELCOME BACK" PANEL (offline jutalom) ============ -->
+  <div id="welcome-back" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-emoji">👋</div>
+      <h2>Welcome back!</h2>
+      <p class="muted">While you were away <b id="wb-time">—</b></p>
+      <div class="wb-rows">
+        <div class="wb-row"><span>🏙️ City income</span><b id="wb-passive">$0</b></div>
+        <div class="wb-row" id="wb-shift-row"><span>💼 Finished shift</span><b id="wb-shift">$0</b></div>
+      </div>
+      <div class="wb-total">You earned <span id="wb-total">$0</span></div>
+      <div class="modal-actions">
+        <button id="btn-wb-double" class="btn btn-ad btn-block">🎬 Double it · Watch ad</button>
+        <button id="btn-wb-collect" class="btn btn-primary btn-block">Collect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ KEZDŐ MENÜ (első indításkor: név + avatar) ============ -->
+  <div id="start-menu" class="modal-overlay hidden">
+    <div class="modal start-modal">
+      <div class="start-logo">🌆 Grushflow</div>
+      <p class="muted">Start your city life. What should we call you?</p>
+      <input id="start-name" class="start-input" maxlength="14" placeholder="Your nickname" autocomplete="off" />
+      <div class="start-sub">Choose your avatar</div>
+      <div id="start-avatars" class="av-grid"></div>
+      <button id="btn-start-game" class="btn btn-primary btn-block">Start ▶</button>
+    </div>
+  </div>
+
+  <!-- ============ ELSŐ INDÍTÁS: MINI-TUTORIAL ============ -->
+  <div id="tutorial" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-emoji">🎮</div>
+      <h2>How to play</h2>
+      <ul class="tut-list">
+        <li><span>💼</span><div><b>Work shifts</b> earn cash — start one, then come back to collect.</div></li>
+        <li><span>🎯</span><div>Chase the <b>Next Goal</b> to grow your passive income.</div></li>
+        <li><span>🎓</span><div><b>Study at Home</b> to unlock better-paid careers.</div></li>
+        <li><span>🗺️</span><div>Explore <b>Bank, Housing, Travel &amp; Shop</b> to build your life.</div></li>
+        <li><span>⚡</span><div><b>Watch ads</b> to speed up timers or double rewards.</div></li>
+      </ul>
+      <button id="btn-tutorial-ok" class="btn btn-primary btn-block">Got it! ▶</button>
+    </div>
+  </div>
+
+  <!-- ============ TOAST (rövid üzenet) ============ -->
+  <div id="toast" class="hidden"></div>
+
+  <!-- A sorrend KÖTŐ: platform → state → ui → main -->
+  <script src="js/platform.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
